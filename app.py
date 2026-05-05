@@ -1,111 +1,129 @@
 import streamlit as st
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
-import time
+from gtts import gTTS
+import tempfile
+import speech_recognition as sr
+from googletrans import Translator
 
-# -------------------------------
-# Improved Training Data
-# -------------------------------
-questions = [
-    "i have a cut", "cut on hand", "my hand is bleeding", "deep cut", "bleeding badly",
-    "burn injury", "i got burned", "burned my finger", "hot oil burn",
-    "i have fever", "high temperature", "feeling feverish", "body is hot",
-    "headache", "i have headache", "my head hurts", "severe headache"
-]
+# -----------------------------
+# Translator
+# -----------------------------
+translator = Translator()
 
-answers = [
-    "Clean the wound and apply antiseptic.",
-    "Apply pressure to stop bleeding.",
-    "Apply pressure and clean the wound properly.",
-    "Cover with clean cloth and seek medical help if deep.",
-    "Apply pressure immediately and stop bleeding.",
+# -----------------------------
+# Voice Output
+# -----------------------------
+def speak(text):
+    tts = gTTS(text)
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
+    tts.save(temp_file.name)
+    st.audio(temp_file.name)
 
-    "Cool the burn under running water. Do not apply ice.",
-    "Run cool water over burn area for 10 minutes.",
-    "Apply aloe vera or soothing cream after cooling.",
-    "Do not touch burn, cool it with water immediately.",
+# -----------------------------
+# Voice Input
+# -----------------------------
+def listen():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        st.info("🎤 Listening...")
+        audio = r.listen(source)
 
-    "Take rest and stay hydrated.",
-    "Monitor temperature and consult a doctor if needed.",
-    "Drink fluids and rest well.",
-    "Take proper rest and check temperature regularly.",
+    try:
+        return r.recognize_google(audio)
+    except:
+        return None
 
-    "Take rest and consider mild pain relief.",
-    "Relax and avoid stress.",
-    "Take rest in a quiet place.",
-    "Use mild pain relief if necessary."
-]
+# -----------------------------
+# Smart Response Engine
+# -----------------------------
+def get_response(user_input):
 
-# -------------------------------
-# Train Model (Improved)
-# -------------------------------
-vectorizer = TfidfVectorizer()
-X = vectorizer.fit_transform(questions)
+    # Translate to English
+    try:
+        translated = translator.translate(user_input, dest="en").text.lower()
+    except:
+        translated = user_input.lower()
 
-model = MultinomialNB()
-model.fit(X, answers)
+    # NON-MEDICAL DETECTION
+    non_medical_words = [
+        "what", "who", "hello", "hi", "about",
+        "project", "chatbot", "ai", "how are you"
+    ]
 
-# -------------------------------
-# UI Setup
-# -------------------------------
-st.set_page_config(page_title="AI First Aid Assistant", page_icon="🩺")
+    if any(word in translated for word in non_medical_words):
+        return "I'm a first aid chatbot. Please describe a health issue like injury, fever, burn, etc."
 
-st.title("🩺 AI First Aid Assistant")
-st.write("Get quick first aid help (cut, burn, fever, headache)")
+    # MEDICAL RESPONSES
+    if any(word in translated for word in ["cut", "injury", "bleeding", "hurt", "wound"]):
+        return "Clean the wound, apply pressure to stop bleeding, and use antiseptic."
 
-# Sidebar
-st.sidebar.title("⚙️ Options")
-if st.sidebar.button("Clear Chat"):
-    st.session_state.messages = []
+    elif any(word in translated for word in ["burn", "fire", "hot"]):
+        return "Cool the burn under running water for 10 minutes. Do not apply ice."
 
-st.sidebar.write("💡 Try: 'I have a cut', 'burn injury', 'fever'")
+    elif any(word in translated for word in ["fever", "temperature"]):
+        return "Take rest, drink fluids, and monitor temperature."
 
-# -------------------------------
-# Chat History
-# -------------------------------
+    elif any(word in translated for word in ["headache", "migraine"]):
+        return "Take rest in a quiet place and stay hydrated."
+
+    elif any(word in translated for word in ["vomit", "vomiting", "nausea"]):
+        return "Drink small amounts of water and stay hydrated."
+
+    else:
+        return "I couldn't clearly understand the issue. Please describe your symptoms."
+
+# -----------------------------
+# UI SETTINGS
+# -----------------------------
+st.set_page_config(page_title="AI First Aid Chatbot", page_icon="🩺")
+
+st.title("🩺 AI First Aid Chatbot")
+st.warning("⚠️ This is not medical advice")
+
+# -----------------------------
+# CHAT HISTORY
+# -----------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display messages
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
-# -------------------------------
-# Chat Input
-# -------------------------------
-user_input = st.chat_input("Type your message here...")
+# -----------------------------
+# VOICE INPUT BUTTON
+# -----------------------------
+user_input = None
 
+if st.button("🎤 Speak"):
+    voice_text = listen()
+    if voice_text:
+        user_input = voice_text
+        st.write("You said:", user_input)
+    else:
+        st.warning("Could not understand voice. Try again.")
+
+# -----------------------------
+# TEXT INPUT
+# -----------------------------
+typed_input = st.chat_input("Type your problem...")
+if typed_input:
+    user_input = typed_input
+
+# -----------------------------
+# PROCESS INPUT
+# -----------------------------
 if user_input:
-    # Show user message
-    st.session_state.messages.append({
-        "role": "user",
-        "content": user_input
-    })
+
+    st.session_state.messages.append({"role": "user", "content": user_input})
 
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    # Process input
-    X_test = vectorizer.transform([user_input])
-    response = model.predict(X_test)[0]
+    response = get_response(user_input)
 
-    # Fallback response (if unsure)
-    if response is None or response == "":
-        response = "I'm not sure. Please consult a doctor."
-
-    # Typing effect
     with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        full_response = ""
+        st.markdown(response)
 
-        for char in response:
-            full_response += char
-            message_placeholder.markdown(full_response)
-            time.sleep(0.02)
+    speak(response)
 
-    # Save bot message
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": response
-    })
+    st.session_state.messages.append({"role": "assistant", "content": response})
