@@ -1,26 +1,54 @@
-# 🩺 AI First Aid Assistant
+# 🩺 AI First Aid Chatbot
 
-An AI-powered chatbot that provides basic first aid suggestions using Machine Learning and NLP.
+An AI-powered multilingual chatbot that provides instant first aid guidance for common health issues.
 
-## 🚀 Features
-- Chat-based UI (like WhatsApp)
-- NLP-based understanding (TF-IDF)
-- Real-time responses
-- Covers cuts, burns, fever, headache
+---
 
-## 🛠️ Technologies Used
+## 🚀 Live Demo
+🔗 https://your-app.streamlit.app
+
+---
+
+## 💻 GitHub Repository
+🔗 https://github.com/your-username/ai-first-aid-chatbot
+
+---
+
+## ✨ Features
+
+- 🌍 Multilingual support (English, Hindi, Telugu, Tamil)
+- 🎤 Voice input (local)
+- 🔊 Voice output using Text-to-Speech
+- 🧠 Smart symptom detection (cut, burn, fever, etc.)
+- 💬 Interactive chat UI using Streamlit
+- ⚡ Fast and lightweight (no heavy ML dependencies)
+
+---
+
+## 🛠️ Tech Stack
+
 - Python
-- Scikit-learn
 - Streamlit
+- Google Translate API (googletrans)
+- SpeechRecognition
+- gTTS (Text-to-Speech)
 
-## ▶️ How to Run
-pip install streamlit scikit-learn  
-streamlit run app.py  
+---
 
-## 💡 Example Queries
-- I have a cut  
-- Burn injury  
-- I feel feverish  
+## 📸 Screenshots
 
-## ⚠️ Disclaimer
-This chatbot gives basic guidance only. Consult a doctor for serious issues.
+### 💬 Chat Interface
+![Chat UI](images/chat.png)
+
+### 🌐 Multilingual Support
+![Multilingual](images/multi.png)
+
+---
+
+## ⚙️ Installation (Local Setup)
+
+```bash
+git clone https://github.com/your-username/ai-first-aid-chatbot.git
+cd ai-first-aid-chatbot
+pip install -r requirements.txt
+streamlit run app.py
